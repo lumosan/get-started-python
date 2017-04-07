@@ -1,5 +1,8 @@
 ---
 applications:
  - name: GetStartedPython
-   random-route: true
+   host: comillasAluDB
    memory: 128M
+   services: 
+   - Cloudant NoSQL DB-mc
+   - Language Translator-ys

@@ -4,15 +4,17 @@ import atexit
 import cf_deployment_tracker
 import os
 import json
+from watson_developer_cloud import LanguageTranslatorV2
 
 # Emit Bluemix deployment event
 cf_deployment_tracker.track()
 
 app = Flask(__name__)
 
-db_name = 'mydb'
+db_name = 'mydb_trans'
 client = None
 db = None
+language_translator = None
 
 if 'VCAP_SERVICES' in os.environ:
     vcap = json.loads(os.getenv('VCAP_SERVICES'))
@@ -24,6 +26,14 @@ if 'VCAP_SERVICES' in os.environ:
         url = 'https://' + creds['host']
         client = Cloudant(user, password, url=url, connect=True)
         db = client.create_database(db_name, throw_on_exists=False)
+
+        creds2 = vcap['language_translator'][0]['credentials']
+        user2 = creds2['username']
+        password2 = creds2['password']
+        url2 = creds2['url']
+        language_translator = LanguageTranslatorV2(
+            username=user2, password=password2, url=url2)
+
 elif os.path.isfile('vcap-local.json'):
     with open('vcap-local.json') as f:
         vcap = json.load(f)
@@ -34,6 +44,15 @@ elif os.path.isfile('vcap-local.json'):
         url = 'https://' + creds['host']
         client = Cloudant(user, password, url=url, connect=True)
         db = client.create_database(db_name, throw_on_exists=False)
+        
+        print(vcap.keys())
+
+        creds2 = vcap['services']['language_translator'][0]['credentials']
+        user2 = creds2['username']
+        password2 = creds2['password']
+        url2 = creds2['url']
+        language_translator = LanguageTranslatorV2(
+                        username=user2, password=password2)
 
 # On Bluemix, get the port number from the environment variable PORT
 # When running this app on the local machine, default the port to 8080
@@ -54,7 +73,7 @@ def get_visitor():
     if client:
         return jsonify(list(map(lambda doc: doc['name'], db)))
     else:
-        print('No database')
+        print('Sin base de datos')
         return jsonify([])
 
 # /**
@@ -72,11 +91,11 @@ def get_visitor():
 def put_visitor():
     user = request.json['name']
     if client:
-        data = {'name':request.json['name']}
+        data = {'name':language_translator.translate(user, source='es', target='en')}
         db.create_document(data)
-        return 'Hello %s! I added you to the database.' % user
+        return 'Se ha guardado "%s" en la base de datos' % user
     else:
-        print('No database')
+        print('Sin base de datos')
         return 'Hello %s!' % user
 
 @atexit.register
