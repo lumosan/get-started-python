@@ -5,6 +5,8 @@ import cf_deployment_tracker
 import os
 import json
 from watson_developer_cloud import LanguageTranslatorV2
+from watson_developer_cloud import TextToSpeechV1
+from os.path import join, dirname
 
 # Emit Bluemix deployment event
 cf_deployment_tracker.track()
@@ -34,6 +36,22 @@ if 'VCAP_SERVICES' in os.environ:
         language_translator = LanguageTranslatorV2(
             username=user2, password=password2, url=url2)
 
+        creds3 = vcap['text_to_speech'][0]['credentials']
+        user3 = creds3['username']
+        password3 = creds3['password']
+        text_to_speech = TextToSpeechV1(username=user3,
+            password=password3)  # Optional flag
+        print(json.dumps(text_to_speech.voices(), indent=2))
+        with open(join(dirname(__file__), '../resources/output.wav'),
+            'wb') as audio_file:
+            audio_file.write(
+                text_to_speech.synthesize('Hello world!', accept='audio/wav',
+                                           voice="en-US_AllisonVoice"))
+        print(
+            json.dumps(text_to_speech.pronunciation(
+                       'Watson', pronunciation_format='spr'), indent=2))
+        print(json.dumps(text_to_speech.customizations(), indent=2))
+
 elif os.path.isfile('vcap-local.json'):
     with open('vcap-local.json') as f:
         vcap = json.load(f)
@@ -53,6 +71,23 @@ elif os.path.isfile('vcap-local.json'):
         url2 = creds2['url']
         language_translator = LanguageTranslatorV2(
                         username=user2, password=password2)
+
+
+        creds3 = vcap['text_to_speech'][0]['credentials']
+        user3 = creds3['username']
+        password3 = creds3['password']
+        text_to_speech = TextToSpeechV1(username=user3,
+            password=password3)  # Optional flag
+        print(json.dumps(text_to_speech.voices(), indent=2))
+        with open(join(dirname(__file__), '../resources/output.wav'),
+            'wb') as audio_file:
+            audio_file.write(
+                text_to_speech.synthesize('Hello world!', accept='audio/wav',
+                                           voice="en-US_AllisonVoice"))
+        print(
+            json.dumps(text_to_speech.pronunciation(
+                       'Watson', pronunciation_format='spr'), indent=2))
+        print(json.dumps(text_to_speech.customizations(), indent=2))
 
 # On Bluemix, get the port number from the environment variable PORT
 # When running this app on the local machine, default the port to 8080
