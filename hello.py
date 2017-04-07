@@ -17,6 +17,7 @@ db_name = 'mydb_trans'
 client = None
 db = None
 language_translator = None
+text_to_speech = None
 
 if 'VCAP_SERVICES' in os.environ:
     vcap = json.loads(os.getenv('VCAP_SERVICES'))
@@ -36,21 +37,11 @@ if 'VCAP_SERVICES' in os.environ:
         language_translator = LanguageTranslatorV2(
             username=user2, password=password2, url=url2)
 
-        creds3 = vcap['text_to_speech'][0]['credentials']
+        creds3 = vcap['services']['text_to_speech'][0]['credentials']
         user3 = creds3['username']
         password3 = creds3['password']
         text_to_speech = TextToSpeechV1(username=user3,
             password=password3)  # Optional flag
-        print(json.dumps(text_to_speech.voices(), indent=2))
-        with open(join(dirname(__file__), '../resources/output.wav'),
-            'wb') as audio_file:
-            audio_file.write(
-                text_to_speech.synthesize('Hello world!', accept='audio/wav',
-                                           voice="en-US_AllisonVoice"))
-        print(
-            json.dumps(text_to_speech.pronunciation(
-                       'Watson', pronunciation_format='spr'), indent=2))
-        print(json.dumps(text_to_speech.customizations(), indent=2))
 
 elif os.path.isfile('vcap-local.json'):
     with open('vcap-local.json') as f:
@@ -78,16 +69,6 @@ elif os.path.isfile('vcap-local.json'):
         password3 = creds3['password']
         text_to_speech = TextToSpeechV1(username=user3,
             password=password3)  # Optional flag
-        print(json.dumps(text_to_speech.voices(), indent=2))
-        with open(join(dirname(__file__), '../resources/output.wav'),
-            'wb') as audio_file:
-            audio_file.write(
-                text_to_speech.synthesize('Hello world!', accept='audio/wav',
-                                           voice="en-US_AllisonVoice"))
-        print(
-            json.dumps(text_to_speech.pronunciation(
-                       'Watson', pronunciation_format='spr'), indent=2))
-        print(json.dumps(text_to_speech.customizations(), indent=2))
 
 # On Bluemix, get the port number from the environment variable PORT
 # When running this app on the local machine, default the port to 8080
@@ -100,7 +81,7 @@ def home():
 # /* Endpoint to greet and add a new visitor to database.
 # * Send a POST request to localhost:8080/api/visitors with body
 # * {
-# * 	"name": "Bob"
+# *     "name": "Bob"
 # * }
 # */
 @app.route('/api/visitors', methods=['GET'])
@@ -126,8 +107,11 @@ def get_visitor():
 def put_visitor():
     user = request.json['name']
     if client:
-        data = {'name':language_translator.translate(user, source='es', target='en')}
+        trans = language_translator.translate(user, source='es', target='en')
+        data = {'name':trans}
         db.create_document(data)
+        text_to_speech.synthesize(trans, accept='audio/wav',
+                                           voice="en-US_AllisonVoice")#)
         return 'Se ha guardado "%s" en la base de datos' % user
     else:
         print('Sin base de datos')
