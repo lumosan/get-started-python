@@ -6,3 +6,4 @@ applications:
    services: 
    - Cloudant NoSQL DB-mc
    - Language Translator-ys
+   - Text to Speech-88
