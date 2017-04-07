@@ -73,7 +73,7 @@ elif os.path.isfile('vcap-local.json'):
                         username=user2, password=password2)
 
 
-        creds3 = vcap['text_to_speech'][0]['credentials']
+        creds3 = vcap['services']['text_to_speech'][0]['credentials']
         user3 = creds3['username']
         password3 = creds3['password']
         text_to_speech = TextToSpeechV1(username=user3,
